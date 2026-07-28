@@ -168,6 +168,18 @@ SENSOR_DESCRIPTIONS: tuple[EverShelfSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         data_key="days_to_next_expiry",
     ),
+    EverShelfSensorDescription(
+        key="last_recipe",
+        translation_key="last_recipe",
+        icon="mdi:chef-hat",
+        data_key="last_recipe_title",
+        extra_attr_keys=(
+            "last_recipe_summary",
+            "last_recipe_main_ingredients",
+            "last_recipe_meal",
+            "last_recipe_persons",
+        ),
+    ),
 )
 
 
@@ -229,7 +241,7 @@ class EverShelfSensor(CoordinatorEntity[EverShelfCoordinator], SensorEntity):
         return True
 
     @property
-    def native_value(self) -> int | float | datetime | None:
+    def native_value(self) -> int | float | datetime | str | None:
         val = self.coordinator.data.get(self.entity_description.data_key)
         if self.entity_description.device_class == SensorDeviceClass.TIMESTAMP and isinstance(val, str):
             try:

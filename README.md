@@ -57,7 +57,7 @@ If your EverShelf server is on the same network and runs `avahi-daemon`, it will
 | **1 Todo entity** | Shopping list — bidirectional sync (add, remove, check off) |
 | **1 Calendar entity** | All product expiry dates as calendar events |
 | **1 Text entity** | Quick-add a product to the shopping list by typing its name |
-| **6 Services** | `add_to_shopping`, `mark_used`, `refresh`, `suggest_recipe`, `refresh_prices`, `clear_expired` |
+| **7 Services** | `add_to_shopping`, `mark_used`, `refresh`, `generate_recipe`, `suggest_recipe`, `refresh_prices`, `clear_expired` |
 | **Auto-discovery** | Zeroconf/mDNS — no manual URL entry needed if `avahi-daemon` runs on EverShelf host |
 | **5 languages** | English, Italian, German, French, Spanish |
 | **Read-only mode** | All sensors work without a token; write operations need `SETTINGS_TOKEN` |
@@ -105,7 +105,7 @@ If your EverShelf server is on the same network and runs `avahi-daemon`, it will
 |---|---|---|
 | `button.evershelf_refresh` | Refresh | Forces an immediate poll of all sensor data |
 | `button.evershelf_refresh_prices` | Refresh Prices | Recomputes shopping list estimated total from price cache — no AI calls |
-| `button.evershelf_suggest_recipe` | Suggest Recipe | Asks EverShelf AI for a recipe using items expiring soonest; result arrives as a **persistent notification** in HA |
+| `button.evershelf_suggest_recipe` | Suggest Recipe | Generates a structured recipe (expiry priority) and shows a **persistent notification**; also updates `sensor.evershelf_last_recipe` |
 | `button.evershelf_sync_smart_shopping` | Sync Smart Shopping | Triggers the EverShelf smart shopping AI analysis |
 | `button.evershelf_clear_expired` | Clear Expired | Removes expired zero-stock inventory rows from EverShelf |
 
@@ -166,9 +166,26 @@ data:
 service: evershelf.refresh
 ```
 
+### `evershelf.generate_recipe`
+
+Generate a full pantry recipe with the **same options as the EverShelf app**. Returns a service response (`title`, `main_ingredients`, `summary`, …), fires event `evershelf_recipe_generated`, and updates `sensor.evershelf_last_recipe`. Requires EverShelf ≥ 1.7.68.
+
+```yaml
+service: evershelf.generate_recipe
+data:
+  meal: pranzo          # or auto / colazione / cena / …
+  persons: 2
+  fuel: true            # a ritmo mio (Health)
+  veloce: true
+  scadenze: true
+  # options: [veloce, fuel, scadenze, salutare, opened, zerowaste, pocafame]
+  # meal_plan_type: pesce
+response_variable: recipe
+```
+
 ### `evershelf.suggest_recipe`
 
-Ask EverShelf AI for a recipe using the items expiring soonest. The result is delivered as a **persistent notification** in Home Assistant.
+Legacy free-text suggestion focused on expiring items. Prefer `generate_recipe` for automations.
 
 ```yaml
 service: evershelf.suggest_recipe
@@ -263,10 +280,61 @@ automation:
       - platform: time
         at: "18:30:00"
     action:
-      - service: evershelf.suggest_recipe
+      - service: evershelf.generate_recipe
         data:
-          location: "frigo"
-      # The recipe arrives as a persistent notification in HA
+          meal: cena
+          scadenze: true
+          veloce: true
+        response_variable: recipe
+      - service: notify.mobile_app_YOUR_PHONE
+        data:
+          title: "Cena: {{ recipe.title }}"
+          message: "{{ recipe.main_ingredients | join(', ') }}"
+```
+
+### Arrive home near lunch → generate recipe
+
+```yaml
+automation:
+  - alias: "EverShelf — Lunch when I arrive"
+    trigger:
+      - platform: state
+        entity_id: person.YOUR_NAME
+        to: "home"
+    condition:
+      - condition: time
+        after: "11:30:00"
+        before: "14:00:00"
+    action:
+      - service: evershelf.generate_recipe
+        data:
+          meal: pranzo
+          fuel: true          # a ritmo mio (if Health enabled)
+          scadenze: true
+          veloce: true
+          persons: 2
+        response_variable: recipe
+      - service: tts.speak
+        data:
+          media_player_entity_id: media_player.YOUR_SPEAKER
+          message: >
+            Benvenuto. Per pranzo propongo {{ recipe.title }}.
+            Ingredienti principali: {{ recipe.main_ingredients | join(', ') }}.
+```
+
+You can also listen for the event:
+
+```yaml
+automation:
+  - alias: "EverShelf — on recipe event"
+    trigger:
+      - platform: event
+        event_type: evershelf_recipe_generated
+    action:
+      - service: notify.mobile_app_YOUR_PHONE
+        data:
+          title: "{{ trigger.event.data.title }}"
+          message: "{{ trigger.event.data.main_ingredients | join(', ') }}"
 ```
 
 ### Add to shopping via voice / Assist

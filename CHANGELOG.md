@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2026-07-28
+
+### Added
+- **`evershelf.generate_recipe`** — structured recipe generation with the same options as the EverShelf app (`meal`, `persons`, `fuel` / a ritmo mio, `veloce`, `scadenze`, `pocafame`, `salutare`, `opened`, `zerowaste`, `meal_plan_type`, …). Returns `title` + `main_ingredients` via service response; fires bus event `evershelf_recipe_generated`; updates `sensor.evershelf_last_recipe`.
+- Requires EverShelf **≥ 1.7.68** (`ha_generate_recipe` API).
+
+### Fixed
+- **Suggest Recipe button** — now creates a persistent notification (and uses structured generation with expiry priority).
+- **`mark_used`** — reads `inventory` from `inventory_list` (was looking for missing `items` key); optional `unit` match.
+
+---
+
 ## [1.2.3] - 2026-06-03
 
 ### Changed

@@ -61,8 +61,8 @@ refresh:
   description: Force an immediate refresh of all EverShelf sensor data.
 
 suggest_recipe:
-  name: Suggest Recipe
-  description: Ask EverShelf AI to suggest a recipe using items expiring soonest.
+  name: Suggest Recipe (legacy)
+  description: Ask EverShelf AI for a free-text recipe using items expiring soonest. Prefer generate_recipe for structured title + ingredients.
   fields:
     location:
       name: Location
@@ -71,6 +71,131 @@ suggest_recipe:
       example: "frigo"
       selector:
         text:
+
+generate_recipe:
+  name: Generate Recipe
+  description: >
+    Generate a full pantry recipe with the same options as the EverShelf app
+    (fuel / quick / expiry priority / meal plan…). Returns title and main_ingredients
+    for automations; also fires event evershelf_recipe_generated.
+  fields:
+    meal:
+      name: Meal
+      description: Meal slot. Use auto to pick from time of day (colazione/pranzo/merenda/cena).
+      required: false
+      example: "pranzo"
+      selector:
+        select:
+          options:
+            - "auto"
+            - "colazione"
+            - "pranzo"
+            - "merenda"
+            - "cena"
+            - "dolce"
+            - "succo"
+    persons:
+      name: Persons
+      description: Number of servings (defaults to EverShelf DEFAULT_PERSONS).
+      required: false
+      example: 2
+      selector:
+        number:
+          min: 1
+          max: 12
+          step: 1
+    options:
+      name: Options
+      description: Recipe option chips (same as the app). If empty and use_prefs is on, server prefs are applied.
+      required: false
+      selector:
+        select:
+          multiple: true
+          options:
+            - "veloce"
+            - "pocafame"
+            - "scadenze"
+            - "salutare"
+            - "opened"
+            - "zerowaste"
+            - "fuel"
+    meal_plan_type:
+      name: Meal plan type
+      description: Optional weekly plan focus (pasta, pesce, carne, legumi, uova, …).
+      required: false
+      example: "pesce"
+      selector:
+        text:
+    fuel:
+      name: A ritmo mio (Fuel)
+      description: Follow the Fuel / health meal budget when Health is enabled.
+      required: false
+      selector:
+        boolean:
+    veloce:
+      name: Quick meal
+      description: Prefer a fast recipe.
+      required: false
+      selector:
+        boolean:
+    scadenze:
+      name: Expiry priority
+      description: Prioritise ingredients that expire soon.
+      required: false
+      selector:
+        boolean:
+    pocafame:
+      name: Light meal
+      description: Prefer a lighter / smaller portion meal.
+      required: false
+      selector:
+        boolean:
+    salutare:
+      name: Healthy
+      description: Prefer a healthier recipe.
+      required: false
+      selector:
+        boolean:
+    opened:
+      name: Opened packages first
+      description: Prefer already-opened packages.
+      required: false
+      selector:
+        boolean:
+    zerowaste:
+      name: Zero waste
+      description: Maximise use of at-risk ingredients.
+      required: false
+      selector:
+        boolean:
+    use_prefs:
+      name: Use EverShelf prefs
+      description: When options are empty, apply the recipe preference toggles saved in EverShelf.
+      required: false
+      default: true
+      selector:
+        boolean:
+    lang:
+      name: Language
+      description: Recipe language (it, en, de, fr, es). Defaults to EverShelf language.
+      required: false
+      example: "it"
+      selector:
+        text:
+    notify:
+      name: Persistent notification
+      description: Create a HA persistent notification with title + main ingredients.
+      required: false
+      default: true
+      selector:
+        boolean:
+    fire_event:
+      name: Fire event
+      description: Fire evershelf_recipe_generated for other automations.
+      required: false
+      default: true
+      selector:
+        boolean:
 
 refresh_prices:
   name: Refresh Prices

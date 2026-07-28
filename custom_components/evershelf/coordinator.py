@@ -11,7 +11,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api_auth import evershelf_headers, evershelf_params
-from .const import DEFAULT_EXPIRY_DAYS, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import DEFAULT_EXPIRY_DAYS, DEFAULT_SCAN_INTERVAL, DOMAIN, EVENT_RECIPE_GENERATED
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.url = url.rstrip("/")
         self.token = token
         self.expiry_days = expiry_days
+        self.last_recipe: dict[str, Any] | None = None
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -85,6 +86,16 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # response structure changes. Uses state value as fallback when
                 # the sensor=total variant is called directly.
                 result.setdefault("total_items", result["state"])
+
+            # Keep last generated recipe attrs across polls
+            if self.last_recipe:
+                result["last_recipe_title"] = self.last_recipe.get("title")
+                result["last_recipe_summary"] = self.last_recipe.get("summary")
+                result["last_recipe_main_ingredients"] = self.last_recipe.get(
+                    "main_ingredients", []
+                )
+                result["last_recipe_meal"] = self.last_recipe.get("meal")
+                result["last_recipe_persons"] = self.last_recipe.get("persons")
 
             # Fetch shopping list (non-fatal if it fails)
             try:
@@ -203,11 +214,26 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     return False
                 data: dict[str, Any] = await resp.json(content_type=None)
 
-            items: list[dict[str, Any]] = data.get("items", [])
-            match = next(
-                (i for i in items if i.get("name", "").lower() == name.lower()),
-                None,
-            )
+            items: list[dict[str, Any]] = data.get("inventory") or data.get("items") or []
+            name_l = name.lower()
+            # Prefer unit match when provided
+            match = None
+            if unit:
+                unit_l = unit.lower()
+                match = next(
+                    (
+                        i
+                        for i in items
+                        if i.get("name", "").lower() == name_l
+                        and str(i.get("unit", "")).lower() == unit_l
+                    ),
+                    None,
+                )
+            if match is None:
+                match = next(
+                    (i for i in items if i.get("name", "").lower() == name_l),
+                    None,
+                )
             if not match:
                 _LOGGER.warning("EverShelf: item '%s' not found in inventory", name)
                 return False
@@ -233,19 +259,48 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # Internal POST helper
     # ------------------------------------------------------------------
 
-    async def _post(self, action: str, payload: dict[str, Any]) -> bool:
+    async def _post(
+        self, action: str, payload: dict[str, Any], timeout: int = 15
+    ) -> bool:
+        data = await self._post_json(action, payload, timeout=timeout)
+        return data is not None
+
+    async def _post_json(
+        self,
+        action: str,
+        payload: dict[str, Any],
+        timeout: int = 15,
+    ) -> dict[str, Any] | None:
+        """POST JSON and return parsed body (or None on transport/HTTP error)."""
         try:
             async with self._session().post(
                 f"{self.url}/api/index.php",
                 params=self._params({"action": action}),
                 headers=self._headers(json_body=True),
                 json=payload,
-                timeout=aiohttp.ClientTimeout(total=15),
+                timeout=aiohttp.ClientTimeout(total=timeout),
             ) as resp:
-                return resp.status == 200
+                if resp.status == 200:
+                    return await resp.json(content_type=None)
+                # Still try to parse error body for callers
+                try:
+                    body = await resp.json(content_type=None)
+                except Exception:  # noqa: BLE001
+                    body = None
+                _LOGGER.warning(
+                    "EverShelf %s returned HTTP %s: %s",
+                    action,
+                    resp.status,
+                    body,
+                )
+                if isinstance(body, dict):
+                    body.setdefault("success", False)
+                    body.setdefault("http_status", resp.status)
+                    return body
+                return None
         except aiohttp.ClientError as err:
             _LOGGER.error("EverShelf %s error: %s", action, err)
-            return False
+            return None
 
     async def _get_json(self, action: str, params: dict | None = None, timeout: int = 15) -> dict[str, Any] | None:
         """GET request returning parsed JSON or None on error."""
@@ -273,7 +328,7 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return await self._get_json("ha_refresh_prices")
 
     async def async_suggest_recipe(self, location: str = "") -> str | None:
-        """Ask EverShelf AI for a recipe using items expiring soonest."""
+        """Ask EverShelf AI for a free-text recipe using items expiring soonest."""
         params = {}
         if location:
             params["location"] = location
@@ -281,6 +336,105 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if data:
             return data.get("recipe")
         return None
+
+    async def async_generate_recipe(
+        self,
+        *,
+        meal: str | None = None,
+        persons: int | None = None,
+        options: list[str] | None = None,
+        meal_plan_type: str | None = None,
+        fuel: bool | None = None,
+        veloce: bool | None = None,
+        scadenze: bool | None = None,
+        pocafame: bool | None = None,
+        salutare: bool | None = None,
+        opened: bool | None = None,
+        zerowaste: bool | None = None,
+        use_prefs: bool = True,
+        lang: str | None = None,
+        notify: bool = True,
+        fire_event: bool = True,
+    ) -> dict[str, Any]:
+        """Generate a structured recipe (same options as the EverShelf UI).
+
+        Returns a dict with at least success/title/main_ingredients/summary.
+        Fires EVENT_RECIPE_GENERATED and updates last_recipe sensor data.
+        """
+        payload: dict[str, Any] = {"use_prefs": use_prefs}
+        if meal:
+            payload["meal"] = meal
+        if persons is not None:
+            payload["persons"] = persons
+        if options:
+            payload["options"] = options
+        if meal_plan_type:
+            payload["meal_plan_type"] = meal_plan_type
+        if lang:
+            payload["lang"] = lang
+        for key, val in (
+            ("fuel", fuel),
+            ("veloce", veloce),
+            ("scadenze", scadenze),
+            ("pocafame", pocafame),
+            ("salutare", salutare),
+            ("opened", opened),
+            ("zerowaste", zerowaste),
+        ):
+            if val is not None:
+                payload[key] = val
+
+        data = await self._post_json("ha_generate_recipe", payload, timeout=90)
+        if not data:
+            return {"success": False, "error": "unreachable"}
+
+        if data.get("success"):
+            self.last_recipe = data
+            # Push into coordinator data for sensors without waiting for poll
+            merged = dict(self.data or {})
+            merged["last_recipe_title"] = data.get("title")
+            merged["last_recipe_summary"] = data.get("summary")
+            merged["last_recipe_main_ingredients"] = data.get("main_ingredients", [])
+            merged["last_recipe_meal"] = data.get("meal")
+            merged["last_recipe_persons"] = data.get("persons")
+            self.async_set_updated_data(merged)
+
+            if fire_event:
+                self.hass.bus.async_fire(
+                    EVENT_RECIPE_GENERATED,
+                    {
+                        "title": data.get("title"),
+                        "main_ingredients": data.get("main_ingredients", []),
+                        "summary": data.get("summary"),
+                        "meal": data.get("meal"),
+                        "persons": data.get("persons"),
+                        "prep_time": data.get("prep_time"),
+                        "cook_time": data.get("cook_time"),
+                        "options": data.get("options", []),
+                        "entry_id": self.entry_id,
+                    },
+                )
+
+            if notify:
+                ings = data.get("main_ingredients") or []
+                ings_txt = ", ".join(ings) if ings else "—"
+                await self.hass.services.async_call(
+                    "persistent_notification",
+                    "create",
+                    {
+                        "title": f"EverShelf: {data.get('title', 'Ricetta')}",
+                        "message": (
+                            f"**{data.get('title', '')}**\n\n"
+                            f"Ingredienti: {ings_txt}\n"
+                            f"Pasto: {data.get('meal', '')} · "
+                            f"{data.get('persons', '')} pers.\n"
+                            f"{data.get('prep_time') or ''} / {data.get('cook_time') or ''}"
+                        ),
+                        "notification_id": "evershelf_recipe",
+                    },
+                )
+
+        return data
 
     async def async_sync_smart_shopping(self) -> bool:
         """Trigger smart shopping AI sync."""

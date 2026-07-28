@@ -90,9 +90,25 @@ class EverShelfButton(CoordinatorEntity[EverShelfCoordinator], ButtonEntity):
                 _LOGGER.info("EverShelf prices refreshed: %s", result.get("total_label"))
             await self.coordinator.async_request_refresh()
         elif action == "ha_suggest_recipe":
-            recipe = await self.coordinator.async_suggest_recipe()
-            if recipe:
-                _LOGGER.info("EverShelf recipe suggestion: %s", recipe[:80])
+            # Prefer structured generation (title + main ingredients + notification + event)
+            result = await self.coordinator.async_generate_recipe(
+                meal="auto",
+                scadenze=True,
+                use_prefs=True,
+            )
+            if not result.get("success"):
+                # Fallback to legacy free-text suggestion
+                recipe = await self.coordinator.async_suggest_recipe()
+                if recipe:
+                    await self.hass.services.async_call(
+                        "persistent_notification",
+                        "create",
+                        {
+                            "title": "EverShelf Recipe Suggestion",
+                            "message": recipe,
+                            "notification_id": "evershelf_recipe",
+                        },
+                    )
             await self.coordinator.async_request_refresh()
         elif action == "ha_sync_smart_shopping":
             await self.coordinator.async_sync_smart_shopping()

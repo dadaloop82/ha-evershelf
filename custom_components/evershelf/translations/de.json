@@ -119,6 +119,9 @@
       },
       "days_to_next_expiry": {
         "name": "Tage bis zum nächsten Ablaufdatum"
+      },
+      "last_recipe": {
+        "name": "Letztes Rezept"
       }
     },
     "binary_sensor": {
@@ -235,6 +238,72 @@
     "clear_expired": {
       "name": "Abgelaufene löschen",
       "description": "Abgelaufene Inventareinträge mit Nullbestand entfernen."
+    },
+    "generate_recipe": {
+      "name": "Generate Recipe",
+      "description": "Generate a pantry recipe with EverShelf options; returns title and main ingredients.",
+      "fields": {
+        "meal": {
+          "name": "Meal",
+          "description": "Meal slot or auto."
+        },
+        "persons": {
+          "name": "Persons",
+          "description": "Number of servings."
+        },
+        "options": {
+          "name": "Options",
+          "description": "veloce, fuel, scadenze, …"
+        },
+        "meal_plan_type": {
+          "name": "Meal plan type",
+          "description": "Optional plan focus (pasta, pesce, …)."
+        },
+        "fuel": {
+          "name": "A ritmo mio",
+          "description": "Follow Fuel budget."
+        },
+        "veloce": {
+          "name": "Quick",
+          "description": "Prefer a fast recipe."
+        },
+        "scadenze": {
+          "name": "Expiry priority",
+          "description": "Use expiring items first."
+        },
+        "pocafame": {
+          "name": "Light",
+          "description": "Lighter meal."
+        },
+        "salutare": {
+          "name": "Healthy",
+          "description": "Healthier recipe."
+        },
+        "opened": {
+          "name": "Opened first",
+          "description": "Prefer opened packages."
+        },
+        "zerowaste": {
+          "name": "Zero waste",
+          "description": "Maximise at-risk ingredients."
+        },
+        "use_prefs": {
+          "name": "Use prefs",
+          "description": "Apply EverShelf preference defaults."
+        },
+        "lang": {
+          "name": "Language",
+          "description": "Recipe language."
+        },
+        "notify": {
+          "name": "Notify",
+          "description": "Show persistent notification."
+        },
+        "fire_event": {
+          "name": "Fire event",
+          "description": "Fire evershelf_recipe_generated."
+        }
+      }
     }
   }
 }

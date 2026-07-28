@@ -23,3 +23,6 @@ MAX_EXPIRY_DAYS = 30
 
 # Platforms
 PLATFORMS = ["sensor", "binary_sensor", "button", "todo", "calendar", "text"]
+
+# Fired when evershelf.generate_recipe succeeds
+EVENT_RECIPE_GENERATED = "evershelf_recipe_generated"

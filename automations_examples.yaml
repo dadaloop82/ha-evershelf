@@ -107,7 +107,36 @@
           tag: evershelf_budget
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 5. DASHBOARD CARD (Lovelace YAML — paste into a Manual card)
+# 5. ARRIVE HOME NEAR LUNCH → generate recipe (title + main ingredients)
+# ──────────────────────────────────────────────────────────────────────────────
+- alias: "EverShelf — Lunch when I arrive"
+  description: "When you arrive home around lunch, ask EverShelf for a recipe."
+  trigger:
+    - platform: state
+      entity_id: person.YOUR_NAME
+      to: "home"
+  condition:
+    - condition: time
+      after: "11:30:00"
+      before: "14:00:00"
+  action:
+    - service: evershelf.generate_recipe
+      data:
+        meal: pranzo
+        fuel: true
+        scadenze: true
+        veloce: true
+        persons: 2
+      response_variable: recipe
+    - service: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "Pranzo: {{ recipe.title }}"
+        message: "{{ recipe.main_ingredients | join(', ') }}"
+        data:
+          tag: evershelf_lunch_recipe
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 6. DASHBOARD CARD (Lovelace YAML — paste into a Manual card)
 # ──────────────────────────────────────────────────────────────────────────────
 # type: entities
 # title: EverShelf Pantry
@@ -119,4 +148,5 @@
 #   - entity: sensor.evershelf_expired_items
 #   - entity: sensor.evershelf_shopping_items
 #   - entity: sensor.evershelf_shopping_total
+#   - entity: sensor.evershelf_last_recipe
 #   - entity: binary_sensor.evershelf_price_tracking

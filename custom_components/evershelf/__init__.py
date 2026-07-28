@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -46,6 +47,47 @@ _MARK_USED_SCHEMA = vol.Schema(
         vol.Required("quantity"): vol.All(vol.Coerce(float), vol.Range(min=0.001)),
         vol.Optional("unit"): cv.string,
     }
+)
+
+_SUGGEST_RECIPE_SCHEMA = vol.Schema(
+    {
+        vol.Optional("location"): cv.string,
+    }
+)
+
+_GENERATE_RECIPE_SCHEMA = vol.Schema(
+    {
+        vol.Optional("meal"): vol.In(
+            ["auto", "colazione", "pranzo", "merenda", "cena", "dolce", "succo"]
+        ),
+        vol.Optional("persons"): vol.All(vol.Coerce(int), vol.Range(min=1, max=12)),
+        vol.Optional("options"): vol.All(
+            cv.ensure_list,
+            [vol.In(["veloce", "pocafame", "scadenze", "salutare", "opened", "zerowaste", "fuel"])],
+        ),
+        vol.Optional("meal_plan_type"): cv.string,
+        vol.Optional("fuel"): cv.boolean,
+        vol.Optional("veloce"): cv.boolean,
+        vol.Optional("scadenze"): cv.boolean,
+        vol.Optional("pocafame"): cv.boolean,
+        vol.Optional("salutare"): cv.boolean,
+        vol.Optional("opened"): cv.boolean,
+        vol.Optional("zerowaste"): cv.boolean,
+        vol.Optional("use_prefs", default=True): cv.boolean,
+        vol.Optional("lang"): cv.string,
+        vol.Optional("notify", default=True): cv.boolean,
+        vol.Optional("fire_event", default=True): cv.boolean,
+    }
+)
+
+_SERVICES = (
+    "add_to_shopping",
+    "mark_used",
+    "refresh",
+    "suggest_recipe",
+    "generate_recipe",
+    "refresh_prices",
+    "clear_expired",
 )
 
 
@@ -109,7 +151,55 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         "notification_id": "evershelf_recipe",
                     },
                 )
+            else:
+                await hass.services.async_call(
+                    "persistent_notification",
+                    "create",
+                    {
+                        "title": "EverShelf Recipe",
+                        "message": "No recipe generated (check Gemini key / pantry).",
+                        "notification_id": "evershelf_recipe",
+                    },
+                )
             await coord.async_request_refresh()
+
+        async def _handle_generate_recipe(call: ServiceCall) -> dict[str, Any]:
+            coord = _get_coordinator(hass, call)
+            result = await coord.async_generate_recipe(
+                meal=call.data.get("meal"),
+                persons=call.data.get("persons"),
+                options=call.data.get("options"),
+                meal_plan_type=call.data.get("meal_plan_type"),
+                fuel=call.data.get("fuel"),
+                veloce=call.data.get("veloce"),
+                scadenze=call.data.get("scadenze"),
+                pocafame=call.data.get("pocafame"),
+                salutare=call.data.get("salutare"),
+                opened=call.data.get("opened"),
+                zerowaste=call.data.get("zerowaste"),
+                use_prefs=call.data.get("use_prefs", True),
+                lang=call.data.get("lang"),
+                notify=call.data.get("notify", True),
+                fire_event=call.data.get("fire_event", True),
+            )
+            if not result.get("success"):
+                err = result.get("error") or "generation_failed"
+                raise ServiceValidationError(f"EverShelf: recipe failed — {err}")
+            # Response for automations: response_variable
+            return {
+                "title": result.get("title"),
+                "main_ingredients": result.get("main_ingredients", []),
+                "summary": result.get("summary"),
+                "meal": result.get("meal"),
+                "persons": result.get("persons"),
+                "prep_time": result.get("prep_time"),
+                "cook_time": result.get("cook_time"),
+                "tags": result.get("tags", []),
+                "ingredients": result.get("ingredients", []),
+                "steps_count": result.get("steps_count"),
+                "nutrition": result.get("nutrition"),
+                "fuel_why": result.get("fuel_why"),
+            }
 
         async def _handle_refresh_prices(call: ServiceCall) -> None:
             coord = _get_coordinator(hass, call)
@@ -128,7 +218,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             DOMAIN, "mark_used", _handle_mark_used, schema=_MARK_USED_SCHEMA
         )
         hass.services.async_register(DOMAIN, "refresh", _handle_refresh)
-        hass.services.async_register(DOMAIN, "suggest_recipe", _handle_suggest_recipe)
+        hass.services.async_register(
+            DOMAIN, "suggest_recipe", _handle_suggest_recipe, schema=_SUGGEST_RECIPE_SCHEMA
+        )
+        hass.services.async_register(
+            DOMAIN,
+            "generate_recipe",
+            _handle_generate_recipe,
+            schema=_GENERATE_RECIPE_SCHEMA,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
         hass.services.async_register(DOMAIN, "refresh_prices", _handle_refresh_prices)
         hass.services.async_register(DOMAIN, "clear_expired", _handle_clear_expired)
 
@@ -142,7 +241,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id, None)
 
     if not hass.data.get(DOMAIN):
-        for svc in ("add_to_shopping", "mark_used", "refresh", "suggest_recipe", "refresh_prices", "clear_expired"):
+        for svc in _SERVICES:
             hass.services.async_remove(DOMAIN, svc)
 
     return unload_ok

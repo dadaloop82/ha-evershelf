@@ -119,6 +119,9 @@
       },
       "days_to_next_expiry": {
         "name": "Giorni alla Prossima Scadenza"
+      },
+      "last_recipe": {
+        "name": "Ultima ricetta"
       }
     },
     "binary_sensor": {
@@ -235,6 +238,72 @@
     "clear_expired": {
       "name": "Elimina Scaduti",
       "description": "Rimuove le righe di inventario scadute con quantità zero."
+    },
+    "generate_recipe": {
+      "name": "Genera ricetta",
+      "description": "Genera una ricetta dalla dispensa con le stesse opzioni dell’app; restituisce titolo e ingredienti principali.",
+      "fields": {
+        "meal": {
+          "name": "Pasto",
+          "description": "Slot pasto oppure auto."
+        },
+        "persons": {
+          "name": "Persone",
+          "description": "Numero di porzioni."
+        },
+        "options": {
+          "name": "Opzioni",
+          "description": "veloce, fuel, scadenze, …"
+        },
+        "meal_plan_type": {
+          "name": "Piano pasti",
+          "description": "Focus opzionale (pasta, pesce, …)."
+        },
+        "fuel": {
+          "name": "A ritmo mio",
+          "description": "Segui il budget Fuel."
+        },
+        "veloce": {
+          "name": "Veloce",
+          "description": "Preferisci una ricetta rapida."
+        },
+        "scadenze": {
+          "name": "Priorità scadenze",
+          "description": "Usa prima gli ingredienti in scadenza."
+        },
+        "pocafame": {
+          "name": "Poca fame",
+          "description": "Pasto più leggero."
+        },
+        "salutare": {
+          "name": "Salutare",
+          "description": "Ricetta più sana."
+        },
+        "opened": {
+          "name": "Aperti prima",
+          "description": "Preferisci confezioni aperte."
+        },
+        "zerowaste": {
+          "name": "Zero waste",
+          "description": "Massimizza ingredienti a rischio."
+        },
+        "use_prefs": {
+          "name": "Usa preferenze",
+          "description": "Applica i default salvati in EverShelf."
+        },
+        "lang": {
+          "name": "Lingua",
+          "description": "Lingua della ricetta."
+        },
+        "notify": {
+          "name": "Notifica",
+          "description": "Mostra notifica persistente."
+        },
+        "fire_event": {
+          "name": "Evento",
+          "description": "Emette evershelf_recipe_generated."
+        }
+      }
     }
   }
 }
