@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.1] - 2026-07-28
+
+### Fixed
+- Generated recipes are saved into EverShelf **Ricette** by default (`save: true`). Requires EverShelf ≥ 1.7.69.
+
 ## [1.3.0] - 2026-07-28
 
 ### Added

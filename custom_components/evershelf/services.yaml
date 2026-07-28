@@ -175,6 +175,13 @@ generate_recipe:
       default: true
       selector:
         boolean:
+    save:
+      name: Save to EverShelf recipes
+      description: Save the recipe into the EverShelf Ricette archive (same as generating in the app).
+      required: false
+      default: true
+      selector:
+        boolean:
     lang:
       name: Language
       description: Recipe language (it, en, de, fr, es). Defaults to EverShelf language.

@@ -75,6 +75,7 @@ _GENERATE_RECIPE_SCHEMA = vol.Schema(
         vol.Optional("zerowaste"): cv.boolean,
         vol.Optional("use_prefs", default=True): cv.boolean,
         vol.Optional("lang"): cv.string,
+        vol.Optional("save", default=True): cv.boolean,
         vol.Optional("notify", default=True): cv.boolean,
         vol.Optional("fire_event", default=True): cv.boolean,
     }
@@ -179,6 +180,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 zerowaste=call.data.get("zerowaste"),
                 use_prefs=call.data.get("use_prefs", True),
                 lang=call.data.get("lang"),
+                save=call.data.get("save", True),
                 notify=call.data.get("notify", True),
                 fire_event=call.data.get("fire_event", True),
             )
@@ -199,6 +201,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 "steps_count": result.get("steps_count"),
                 "nutrition": result.get("nutrition"),
                 "fuel_why": result.get("fuel_why"),
+                "saved": result.get("saved"),
+                "archive_id": result.get("archive_id"),
             }
 
         async def _handle_refresh_prices(call: ServiceCall) -> None:

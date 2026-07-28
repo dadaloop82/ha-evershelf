@@ -353,6 +353,7 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         zerowaste: bool | None = None,
         use_prefs: bool = True,
         lang: str | None = None,
+        save: bool = True,
         notify: bool = True,
         fire_event: bool = True,
     ) -> dict[str, Any]:
@@ -360,8 +361,9 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         Returns a dict with at least success/title/main_ingredients/summary.
         Fires EVENT_RECIPE_GENERATED and updates last_recipe sensor data.
+        By default the recipe is also saved in EverShelf's Ricette archive.
         """
-        payload: dict[str, Any] = {"use_prefs": use_prefs}
+        payload: dict[str, Any] = {"use_prefs": use_prefs, "save": save}
         if meal:
             payload["meal"] = meal
         if persons is not None:
