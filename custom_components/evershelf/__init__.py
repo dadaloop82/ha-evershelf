@@ -12,10 +12,12 @@ import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 
 from .const import (
+    CONF_CALENDAR_ATTENTION,
     CONF_EXPIRY_DAYS,
     CONF_SCAN_INTERVAL,
     CONF_TOKEN,
     CONF_URL,
+    DEFAULT_CALENDAR_ATTENTION,
     DEFAULT_EXPIRY_DAYS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -101,6 +103,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         token=entry.data.get(CONF_TOKEN, ""),
         scan_interval=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
         expiry_days=entry.options.get(CONF_EXPIRY_DAYS, DEFAULT_EXPIRY_DAYS),
+        calendar_attention_only=entry.options.get(
+            CONF_CALENDAR_ATTENTION, DEFAULT_CALENDAR_ATTENTION
+        ),
     )
     await coordinator.async_config_entry_first_refresh()
 

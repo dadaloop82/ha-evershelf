@@ -61,11 +61,13 @@
         "title": "Options EverShelf",
         "data": {
           "expiry_days": "Seuil d'alerte expiration (jours)",
-          "scan_interval": "Intervalle de mise à jour (secondes)"
+          "scan_interval": "Intervalle de mise à jour (secondes)",
+          "calendar_attention_only": "Calendrier : uniquement les alertes"
         },
         "data_description": {
           "expiry_days": "Produits expirant dans ce nombre de jours comptent comme 'bientôt expirés'. Défaut : 3.",
-          "scan_interval": "Fréquence d'interrogation d'EverShelf (secondes). Défaut : 300 (5 min)."
+          "scan_interval": "Fréquence d'interrogation d'EverShelf (secondes). Défaut : 300 (5 min).",
+          "calendar_attention_only": "Si activé, le calendrier d’expiration suit les alertes du tableau de bord EverShelf (masque les DLC peu critiques). Nécessite EverShelf ≥ 1.11.5. Défaut : désactivé (toutes les dates)."
         }
       }
     }
@@ -122,6 +124,9 @@
       },
       "last_recipe": {
         "name": "Dernière recette"
+      },
+      "shopping_mode": {
+        "name": "Mode courses"
       }
     },
     "binary_sensor": {

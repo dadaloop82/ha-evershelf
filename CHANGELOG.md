@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.2] - 2026-10-06
+
+### Added
+- **`sensor.evershelf_shopping_mode`** — `internal` or `bring` (from EverShelf ≥ 1.11.5 `ha_sensor`).
+- **Option “Calendar: only alert-worthy expiries”** — when enabled, `ha_calendar?attention=1` so the calendar matches dashboard urgency (silent best-before leftovers stay out). Requires EverShelf ≥ 1.11.5.
+
+### Changed
+- **Expiry sensors** already consume EverShelf’s attention-filtered lists (same rules as the app dashboard since EverShelf **1.11.5**). Update EverShelf first for parity.
+- **`binary_sensor.evershelf_bring_connected`** is now a **diagnostic** entity (expected `off` when shopping mode is internal).
+- Calendar events may show `· OK (best before)` in the description when EverShelf marks `needs_attention: false`.
+
+### Notes
+- Recommended EverShelf version: **≥ 1.11.5**
+- After updating: HACS → EverShelf → Redeploy / restart HA; optionally enable the new calendar option under Configure.
+
+---
+
 ## [1.3.1] - 2026-07-28
 
 ### Fixed

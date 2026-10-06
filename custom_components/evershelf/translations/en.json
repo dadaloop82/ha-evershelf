@@ -61,11 +61,13 @@
         "title": "EverShelf Options",
         "data": {
           "expiry_days": "Expiry alert threshold (days)",
-          "scan_interval": "Update interval (seconds)"
+          "scan_interval": "Update interval (seconds)",
+          "calendar_attention_only": "Calendar: only alert-worthy expiries"
         },
         "data_description": {
           "expiry_days": "Products expiring within this many days are counted as 'expiring soon'. Default: 3.",
-          "scan_interval": "How often to poll EverShelf for updates, in seconds. Default: 300 (5 min)."
+          "scan_interval": "How often to poll EverShelf for updates, in seconds. Default: 300 (5 min).",
+          "calendar_attention_only": "When on, the expiry calendar matches EverShelf dashboard alerts (hides low-risk best-before leftovers). Requires EverShelf ≥ 1.11.5. Default: off (all dated packs)."
         }
       }
     }
@@ -122,6 +124,9 @@
       },
       "last_recipe": {
         "name": "Last Recipe"
+      },
+      "shopping_mode": {
+        "name": "Shopping Mode"
       }
     },
     "binary_sensor": {

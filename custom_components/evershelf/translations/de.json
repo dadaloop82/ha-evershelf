@@ -61,11 +61,13 @@
         "title": "EverShelf-Optionen",
         "data": {
           "expiry_days": "Ablaufwarnung Schwellenwert (Tage)",
-          "scan_interval": "Aktualisierungsintervall (Sekunden)"
+          "scan_interval": "Aktualisierungsintervall (Sekunden)",
+          "calendar_attention_only": "Kalender: nur meldewürdige Abläufe"
         },
         "data_description": {
           "expiry_days": "Produkte, die innerhalb dieser Tage ablaufen, werden als 'bald ablaufend' gezählt. Standard: 3.",
-          "scan_interval": "Wie oft EverShelf abgefragt wird (Sekunden). Standard: 300 (5 Minuten)."
+          "scan_interval": "Wie oft EverShelf abgefragt wird (Sekunden). Standard: 300 (5 Minuten).",
+          "calendar_attention_only": "Wenn aktiv, entspricht der Ablaufkalender den EverShelf-Dashboard-Warnungen (versteckt unkritische MHD-Reste). Benötigt EverShelf ≥ 1.11.5. Standard: aus (alle Daten)."
         }
       }
     }
@@ -122,6 +124,9 @@
       },
       "last_recipe": {
         "name": "Letztes Rezept"
+      },
+      "shopping_mode": {
+        "name": "Einkaufsmodus"
       }
     },
     "binary_sensor": {

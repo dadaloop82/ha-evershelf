@@ -16,10 +16,12 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api_auth import evershelf_headers, evershelf_params
 from .const import (
+    CONF_CALENDAR_ATTENTION,
     CONF_EXPIRY_DAYS,
     CONF_SCAN_INTERVAL,
     CONF_TOKEN,
     CONF_URL,
+    DEFAULT_CALENDAR_ATTENTION,
     DEFAULT_EXPIRY_DAYS,
     DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
@@ -279,6 +281,12 @@ class EverShelfOptionsFlow(config_entries.OptionsFlow):
                         CONF_SCAN_INTERVAL,
                         default=opts.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     ): vol.All(int, vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL)),
+                    vol.Required(
+                        CONF_CALENDAR_ATTENTION,
+                        default=opts.get(
+                            CONF_CALENDAR_ATTENTION, DEFAULT_CALENDAR_ATTENTION
+                        ),
+                    ): bool,
                 }
             ),
         )

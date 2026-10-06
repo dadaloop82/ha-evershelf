@@ -61,11 +61,13 @@
         "title": "Opciones de EverShelf",
         "data": {
           "expiry_days": "Umbral de alerta de caducidad (días)",
-          "scan_interval": "Intervalo de actualización (segundos)"
+          "scan_interval": "Intervalo de actualización (segundos)",
+          "calendar_attention_only": "Calendario: solo caducidades a avisar"
         },
         "data_description": {
           "expiry_days": "Productos que caducan en este número de días se cuentan como 'próximos a caducar'. Por defecto: 3.",
-          "scan_interval": "Cada cuántos segundos consultar EverShelf. Por defecto: 300 (5 minutos)."
+          "scan_interval": "Cada cuántos segundos consultar EverShelf. Por defecto: 300 (5 minutos).",
+          "calendar_attention_only": "Si está activo, el calendario de caducidades sigue las alertas del panel EverShelf (oculta caducidades de bajo riesgo). Requiere EverShelf ≥ 1.11.5. Por defecto: desactivado (todas las fechas)."
         }
       }
     }
@@ -122,6 +124,9 @@
       },
       "last_recipe": {
         "name": "Última receta"
+      },
+      "shopping_mode": {
+        "name": "Modo compra"
       }
     },
     "binary_sensor": {

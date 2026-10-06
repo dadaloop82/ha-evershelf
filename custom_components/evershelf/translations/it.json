@@ -61,11 +61,13 @@
         "title": "Opzioni EverShelf",
         "data": {
           "expiry_days": "Soglia avviso scadenza (giorni)",
-          "scan_interval": "Intervallo aggiornamento (secondi)"
+          "scan_interval": "Intervallo aggiornamento (secondi)",
+          "calendar_attention_only": "Calendario: solo scadenze da segnalare"
         },
         "data_description": {
           "expiry_days": "Prodotti in scadenza entro questi giorni vengono contati come 'in scadenza'. Predefinito: 3.",
-          "scan_interval": "Ogni quanti secondi aggiornare i dati da EverShelf. Predefinito: 300 (5 minuti)."
+          "scan_interval": "Ogni quanti secondi aggiornare i dati da EverShelf. Predefinito: 300 (5 minuti).",
+          "calendar_attention_only": "Se attivo, il calendario scadenze allinea gli alert della dashboard EverShelf (nasconde i “da consumarsi preferibilmente entro” a basso rischio). Richiede EverShelf ≥ 1.11.5. Predefinito: off (tutte le date)."
         }
       }
     }
@@ -122,6 +124,9 @@
       },
       "last_recipe": {
         "name": "Ultima ricetta"
+      },
+      "shopping_mode": {
+        "name": "Modalità spesa"
       }
     },
     "binary_sensor": {

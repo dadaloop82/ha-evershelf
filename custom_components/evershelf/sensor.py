@@ -169,6 +169,13 @@ SENSOR_DESCRIPTIONS: tuple[EverShelfSensorDescription, ...] = (
         data_key="days_to_next_expiry",
     ),
     EverShelfSensorDescription(
+        key="shopping_mode",
+        translation_key="shopping_mode",
+        icon="mdi:cart-outline",
+        data_key="shopping_mode",
+        extra_attr_keys=("bring_connected", "expiry_filter"),
+    ),
+    EverShelfSensorDescription(
         key="last_recipe",
         translation_key="last_recipe",
         icon="mdi:chef-hat",

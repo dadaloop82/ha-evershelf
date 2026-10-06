@@ -11,8 +11,13 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api_auth import evershelf_headers, evershelf_params
-from .const import DEFAULT_EXPIRY_DAYS, DEFAULT_SCAN_INTERVAL, DOMAIN, EVENT_RECIPE_GENERATED
-
+from .const import (
+    DEFAULT_CALENDAR_ATTENTION,
+    DEFAULT_EXPIRY_DAYS,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    EVENT_RECIPE_GENERATED,
+)
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -27,6 +32,7 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         token: str,
         scan_interval: int = DEFAULT_SCAN_INTERVAL,
         expiry_days: int = DEFAULT_EXPIRY_DAYS,
+        calendar_attention_only: bool = DEFAULT_CALENDAR_ATTENTION,
     ) -> None:
         super().__init__(
             hass,
@@ -38,6 +44,7 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.url = url.rstrip("/")
         self.token = token
         self.expiry_days = expiry_days
+        self.calendar_attention_only = calendar_attention_only
         self.last_recipe: dict[str, Any] | None = None
 
     # ------------------------------------------------------------------
@@ -447,8 +454,15 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return await self._get_json("ha_clear_expired")
 
     async def async_get_calendar_events(self) -> list[dict[str, Any]]:
-        """Fetch all expiry events from EverShelf for the calendar entity."""
-        data = await self._get_json("ha_calendar")
+        """Fetch expiry events from EverShelf for the calendar entity.
+
+        With calendar_attention_only (options), request attention=1 so the feed
+        matches EverShelf dashboard / sensor urgency (EverShelf ≥ 1.11.5).
+        """
+        params: dict[str, Any] = {}
+        if self.calendar_attention_only:
+            params["attention"] = "1"
+        data = await self._get_json("ha_calendar", params)
         if data:
             return data.get("events", [])
         return []

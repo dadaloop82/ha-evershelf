@@ -40,7 +40,7 @@ If your EverShelf server is on the same network and runs `avahi-daemon`, it will
 
 | Requirement | Details |
 |---|---|
-| **EverShelf** (self-hosted) | v1.7.0+ — [installation guide](https://github.com/dadaloop82/EverShelf#-quick-start) |
+| **EverShelf** (self-hosted) | **v1.11.5+ recommended** (expiry sensor parity); v1.7.0+ minimum — [installation guide](https://github.com/dadaloop82/EverShelf#-quick-start) |
 | **Home Assistant** | 2024.1.0 or newer |
 | **Network** | HA host must be able to reach the EverShelf server (same LAN or routed) |
 | **SETTINGS_TOKEN** | Optional — needed only for write operations (add to shopping, mark used) |
@@ -51,8 +51,8 @@ If your EverShelf server is on the same network and runs `avahi-daemon`, it will
 
 | Category | What you get |
 |---|---|
-| **16 Sensors** | Expiry counts, stock levels, location breakdown, shopping total, AI usage, last backup, days to next expiry |
-| **6 Binary Sensors** | Expired items, expiring items, expiring today, shopping list active, price tracking, backup overdue, Bring! connected |
+| **17 Sensors** | Expiry counts (dashboard-parity since EverShelf 1.11.5), stock, locations, shopping total, shopping mode, AI usage, last backup, days to next expiry |
+| **7 Binary Sensors** | Expired / expiring / today, shopping active, price tracking, backup overdue, Bring! connected (diagnostic) |
 | **5 Buttons** | Refresh, Refresh Prices, Suggest Recipe (AI), Sync Smart Shopping, Clear Expired |
 | **1 Todo entity** | Shopping list — bidirectional sync (add, remove, check off) |
 | **1 Calendar entity** | All product expiry dates as calendar events |
@@ -78,6 +78,7 @@ If your EverShelf server is on the same network and runs `avahi-daemon`, it will
 | `sensor.evershelf_opened_items` | Opened Items | items | Partially-opened packages being tracked |
 | `sensor.evershelf_shopping_items` | Shopping List | items | Number of items on the shopping list |
 | `sensor.evershelf_shopping_total` | Shopping Total | — | Estimated cost of the shopping list (e.g. `€12.40`) |
+| `sensor.evershelf_shopping_mode` | Shopping Mode | — | `internal` or `bring` (EverShelf ≥ 1.11.5) |
 | `sensor.evershelf_items_dispensa` | Items in Pantry | items | Stock count for the pantry location |
 | `sensor.evershelf_items_frigo` | Items in Fridge | items | Stock count for the fridge location |
 | `sensor.evershelf_items_freezer` | Items in Freezer | items | Stock count for the freezer location |
@@ -97,7 +98,7 @@ If your EverShelf server is on the same network and runs `avahi-daemon`, it will
 | `binary_sensor.evershelf_has_shopping_items` | Shopping List Active | — | Shopping list has at least one item |
 | `binary_sensor.evershelf_price_tracking_enabled` | Price Tracking | — | Price estimation is enabled in EverShelf |
 | `binary_sensor.evershelf_backup_overdue` | Backup Overdue | `problem` | No backup in the last 7 days, or no backup ever taken |
-| `binary_sensor.evershelf_bring_connected` | Bring! Connected | `connectivity` | Bring! shopping app is linked and authenticated |
+| `binary_sensor.evershelf_bring_connected` | Bring! Connected | `connectivity` (diagnostic) | `on` only when `SHOPPING_MODE=bring` and credentials work; expected `off` with the default internal list |
 
 ### Buttons (5)
 
@@ -119,7 +120,7 @@ If your EverShelf server is on the same network and runs `avahi-daemon`, it will
 
 ### Calendar entity
 
-`calendar.evershelf_expiry_calendar` — Every product's expiry date is a calendar event.
+`calendar.evershelf_expiry_calendar` — Product expiry dates as calendar events. By default **all** dated packs appear; enable **Calendar: only alert-worthy expiries** in the integration options (EverShelf ≥ 1.11.5) to match dashboard alerts.
 
 - Works with the standard HA calendar card and any calendar integration
 - Trigger automations on specific expiry dates

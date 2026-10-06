@@ -62,15 +62,18 @@ class EverShelfCalendar(CalendarEntity):
             except (KeyError, ValueError):
                 continue
             if start_d <= expiry <= end_d:
+                desc = ev.get("description", "") or ""
+                # EverShelf ≥ 1.11.5 tags low-risk best-before leftovers.
+                if ev.get("needs_attention") is False:
+                    desc = f"{desc} · OK (best before)".strip(" ·")
                 events.append(
                     CalendarEvent(
                         start=expiry,
                         end=expiry + timedelta(days=1),
                         summary=ev["summary"],
-                        description=ev.get("description", ""),
+                        description=desc,
                         location=ev.get("location", ""),
                     )
                 )
-
         self._cached_events = events
         return events
