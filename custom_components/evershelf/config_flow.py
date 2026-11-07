@@ -40,7 +40,7 @@ async def _async_test_url(
     hass, url: str, token: str = ""
 ) -> tuple[bool, str, dict[str, Any]]:
     """Test EverShelf URL. Returns (ok, error_key, info_dict)."""
-    session = async_get_clientsession(hass, verify_ssl=False)
+    session = async_get_clientsession(hass)
     headers = evershelf_headers(token)
 
     # Try ha_info first (richer response)
@@ -78,6 +78,7 @@ class EverShelfConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         self._discovered_url: str = ""
+        self._existing_entry_id: str = ""
         self._info: dict[str, Any] = {}
 
     # ── Zeroconf auto-discovery ────────────────────────────────────────
@@ -96,8 +97,9 @@ class EverShelfConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="cannot_connect")
 
         unique_id = info.get("unique_id") or f"evershelf_{host}"
-        await self.async_set_unique_id(unique_id)
-        self._abort_if_unique_id_configured(updates={CONF_URL: url})
+        known = await self._async_handle_known_instance(unique_id, url, info)
+        if known is not None:
+            return known
 
         self._discovered_url = url
         self._info = info
@@ -124,6 +126,54 @@ class EverShelfConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
+    # ── Already configured instance found at a different address ──────
+
+    async def _async_handle_known_instance(
+        self, unique_id: str, url: str, info: dict[str, Any]
+    ) -> FlowResult | None:
+        """Return a result when ``unique_id`` belongs to an existing entry, else None.
+
+        The unique_id is published unauthenticated by EverShelf, so a discovered host
+        can claim it. A different address therefore never replaces the stored URL on
+        its own: the user has to confirm, because the API token follows the URL.
+        """
+        existing = await self.async_set_unique_id(unique_id)
+        if existing is None:
+            return None
+        if existing.data.get(CONF_URL) == url:
+            return self.async_abort(reason="already_configured")
+        self._existing_entry_id = existing.entry_id
+        self._discovered_url = url
+        self._info = info
+        self.context["title_placeholders"] = {
+            "name": info.get("instance", DEFAULT_NAME),
+            "host": url,
+        }
+        return await self.async_step_confirm_url_update()
+
+    async def async_step_confirm_url_update(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Ask before pointing an existing entry at a different address."""
+        entry = self.hass.config_entries.async_get_entry(self._existing_entry_id)
+        if entry is None:
+            return self.async_abort(reason="already_configured")
+
+        if user_input is not None:
+            self.hass.config_entries.async_update_entry(
+                entry, data={**entry.data, CONF_URL: self._discovered_url}
+            )
+            return self.async_abort(reason="url_updated")
+
+        return self.async_show_form(
+            step_id="confirm_url_update",
+            description_placeholders={
+                "name": self._info.get("instance", DEFAULT_NAME),
+                "old_url": str(entry.data.get(CONF_URL, "?")),
+                "new_url": self._discovered_url,
+            },
+        )
+
     # ── Discovery helper ──────────────────────────────────────────────
 
     async def _async_probe_or_menu(self, menu_step_id: str) -> FlowResult:
@@ -134,8 +184,9 @@ class EverShelfConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._discovered_url = probe_url
             self._info = info
             unique_id = info.get("unique_id") or "evershelf_evershelf.local"
-            await self.async_set_unique_id(unique_id)
-            self._abort_if_unique_id_configured(updates={CONF_URL: probe_url})
+            known = await self._async_handle_known_instance(unique_id, probe_url, info)
+            if known is not None:
+                return known
             self.context["title_placeholders"] = {
                 "name": info.get("instance", DEFAULT_NAME),
                 "host": "evershelf.local",

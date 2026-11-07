@@ -32,6 +32,10 @@
         "title": "EverShelf trovato in rete!",
         "description": "Trovato **{name}** su `{url}`\n\n**Versione:** {version}  ·  **Prodotti in dispensa:** {items}\n\nVuoi aggiungere questa istanza EverShelf a Home Assistant?"
       },
+      "confirm_url_update": {
+        "title": "Indirizzo cambiato",
+        "description": "**{name}** ora risponde su `{new_url}`, ma Home Assistant ha salvato `{old_url}`.\n\nConferma solo se hai spostato EverShelf tu stesso. Il token API viene inviato al nuovo indirizzo, quindi un dispositivo sconosciuto che si spaccia per EverShelf lo riceverebbe."
+      },
       "auth": {
         "title": "Autenticazione",
         "description": "Connessione a **{name}** su `{url}`\n\n{token_hint}\n\nInserisci il valore `API_TOKEN` dal file `.env` di EverShelf.",
@@ -52,6 +56,7 @@
     },
     "abort": {
       "already_configured": "Questa istanza EverShelf è già configurata.",
+      "url_updated": "Indirizzo aggiornato.",
       "cannot_connect": "EverShelf non è raggiungibile. Controlla la connettività di rete."
     }
   },

@@ -16,8 +16,6 @@ def evershelf_headers(token: str = "", *, json_body: bool = False) -> dict[str, 
 
 
 def evershelf_params(token: str = "", params: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Query params with optional api_token (for HA / SSE clients)."""
-    out = dict(params or {})
-    if token:
-        out["api_token"] = token
-    return out
+    """Query params. The token is deliberately NOT added here: a query string ends up
+    in server access logs and proxies. Authentication goes through evershelf_headers()."""
+    return dict(params or {})
