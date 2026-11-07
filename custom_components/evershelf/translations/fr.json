@@ -32,6 +32,10 @@
         "title": "EverShelf trouvé sur le réseau !",
         "description": "**{name}** trouvé à `{url}`\n\n**Version :** {version}  ·  **Produits en stock :** {items}\n\nVoulez-vous ajouter cette instance EverShelf à Home Assistant ?"
       },
+      "confirm_url_update": {
+        "title": "Adresse modifiée",
+        "description": "**{name}** répond maintenant sur `{new_url}`, mais Home Assistant a enregistré `{old_url}`.\n\nNe confirmez que si vous avez déplacé EverShelf vous-même. Votre jeton API est envoyé à la nouvelle adresse, un appareil inconnu se faisant passer pour EverShelf le recevrait."
+      },
       "auth": {
         "title": "Authentification",
         "description": "Connexion à **{name}** sur `{url}`\n\n{token_hint}\n\nEntrez la valeur `API_TOKEN` du fichier `.env` EverShelf.",
@@ -52,6 +56,7 @@
     },
     "abort": {
       "already_configured": "Cette instance EverShelf est déjà configurée.",
+      "url_updated": "Adresse mise à jour.",
       "cannot_connect": "EverShelf est inaccessible. Vérifiez la connectivité réseau."
     }
   },

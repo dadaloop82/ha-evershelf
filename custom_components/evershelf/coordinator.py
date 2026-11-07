@@ -58,7 +58,7 @@ class EverShelfCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return evershelf_params(self.token, params)
 
     def _session(self) -> aiohttp.ClientSession:
-        return async_get_clientsession(self.hass, verify_ssl=False)
+        return async_get_clientsession(self.hass)
 
     # ------------------------------------------------------------------
     # DataUpdateCoordinator
